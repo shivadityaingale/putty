@@ -1134,6 +1134,163 @@ static void environ_handler(union control *ctrl, dlgparam *dlg,
     }
 }
 
+struct keymap_data {
+	union control *varlistbox, *valbox, *addbutton, *rembutton, *listbox;
+};
+
+static void keymap_handler(union control *ctrl, dlgparam *dlg,
+	void *data, int event)
+{
+	Conf *conf = (Conf *)data;
+	struct keymap_data *km =
+		(struct keymap_data *)ctrl->generic.context.p;
+
+	if (event == EVENT_REFRESH) {
+		if (ctrl == km->listbox) {
+			char *key, *val;
+			dlg_update_start(ctrl, dlg);
+			dlg_listbox_clear(ctrl, dlg);
+			for (val = conf_get_str_strs(conf, CONF_keymap, NULL, &key);
+				val != NULL;
+				val = conf_get_str_strs(conf, CONF_keymap, key, &key)) {
+				char *p = dupprintf("%s\t%s", key, val);
+				dlg_listbox_add(ctrl, dlg, p);
+				sfree(p);
+			}
+			dlg_update_done(ctrl, dlg);
+		}
+		if (ctrl== km->varlistbox) {
+			dlg_update_start(ctrl, dlg);
+			dlg_listbox_clear(ctrl, dlg);
+			dlg_listbox_addwithid(ctrl, dlg, "None", 0);
+			dlg_listbox_addwithid(ctrl, dlg, "ALT + Shift + F1", 1);
+			dlg_listbox_addwithid(ctrl, dlg, "ALT + Shift + F2", 2);
+			dlg_listbox_addwithid(ctrl, dlg, "ALT + Shift + F3", 3);
+			dlg_listbox_addwithid(ctrl, dlg, "ALT + Shift + F4", 4);
+			dlg_listbox_addwithid(ctrl, dlg, "ALT + Shift + F5", 5);
+			dlg_listbox_addwithid(ctrl, dlg, "ALT + Shift + F6", 6);
+			dlg_listbox_addwithid(ctrl, dlg, "ALT + Shift + F7", 7);
+			dlg_listbox_addwithid(ctrl, dlg, "ALT + Shift + F8", 8);
+			dlg_listbox_addwithid(ctrl, dlg, "ALT + Shift + F9", 9);
+			dlg_listbox_addwithid(ctrl, dlg, "ALT + Shift + F10", 10);
+			dlg_listbox_addwithid(ctrl, dlg, "ALT + Shift + F11", 11);
+			dlg_listbox_addwithid(ctrl, dlg, "ALT + Shift + F12", 12);
+			dlg_listbox_select(ctrl, dlg, 0);
+			dlg_update_done(ctrl, dlg);
+		}
+	}
+	else if (event == EVENT_ACTION) {
+		if (ctrl == km->addbutton) {
+			// char *key, *val, *str;
+			char key[2], *val, *str;
+			int i = dlg_listbox_index(km->varlistbox, dlg);
+			/* The F4 key might be used to close Putty.*/
+			if (i <= 0 || ( i ==4 && conf_get_bool(conf, CONF_alt_f4))) {
+				i = 0;
+				if (i == 4) {
+					dlg_editbox_set(km->valbox, dlg, "ALT+F4 option is selected.");
+				}
+				dlg_beep(dlg);
+				return;
+			}
+			sprintf(key, "%d", i);
+			val = dlg_editbox_get(km->valbox, dlg);
+			if (!*val) {
+				//sfree(key);
+				sfree(val);
+				dlg_beep(dlg);
+				return;
+			}
+			conf_set_str_str(conf, CONF_keymap, key, val);
+			str = dupcat(key, "\t", val);
+			dlg_listbox_select(km->varlistbox, dlg, 0);
+			dlg_editbox_set(km->valbox, dlg, "");
+			sfree(str);
+			//sfree(key);
+			sfree(val);
+			dlg_refresh(km->listbox, dlg);
+		}
+		else if (ctrl == km->rembutton) {
+			int i = dlg_listbox_index(km->listbox, dlg);
+			if (i < 0) {
+				dlg_beep(dlg);
+			}
+			else {
+				char *key, *val;
+
+				key = conf_get_str_nthstrkey(conf, CONF_keymap, i);
+				if (key) {
+					/* Populate controls with the entry we're about to delete
+					 * for ease of editing */
+					val = conf_get_str_str(conf, CONF_keymap, key);
+					dlg_listbox_select(km->varlistbox, dlg, 0);
+					dlg_editbox_set(km->valbox, dlg, val);
+					/* And delete it */
+					conf_del_str_str(conf, CONF_keymap, key);
+				}
+			}
+			dlg_refresh(km->listbox, dlg);
+		}
+	}
+}
+
+
+static void keymap_droplist_handler(union control *ctrl, dlgparam *dlg,
+	void *data, int event)
+{
+	Conf *conf = (Conf *)data;
+	if (event == EVENT_REFRESH) {
+		/*
+		 * We must fetch the previously configured value from the Conf
+		 * before we start modifying the drop-down list, otherwise the
+		 * spurious SELCHANGE we trigger in the process will overwrite
+		 * the value we wanted to keep.
+		 */
+		int oldconf = conf_get_int(conf, ctrl->listbox.context.i);
+		dlg_update_start(ctrl, dlg);
+		dlg_listbox_clear(ctrl, dlg);
+		dlg_listbox_addwithid(ctrl, dlg, "None", AUTO);
+		dlg_listbox_addwithid(ctrl, dlg, "ALT + Shift + F1", PK_F1);
+		dlg_listbox_addwithid(ctrl, dlg, "ALT + Shift + F2", PK_F2);
+		dlg_listbox_addwithid(ctrl, dlg, "ALT + Shift + F3", PK_F3);
+		dlg_listbox_addwithid(ctrl, dlg, "ALT + Shift + F4", PK_F4);
+		dlg_listbox_addwithid(ctrl, dlg, "ALT + Shift + F5", PK_F5);
+		dlg_listbox_addwithid(ctrl, dlg, "ALT + Shift + F6", PK_F6);
+		dlg_listbox_addwithid(ctrl, dlg, "ALT + Shift + F7", PK_F7);
+		dlg_listbox_addwithid(ctrl, dlg, "ALT + Shift + F8", PK_F8);
+		dlg_listbox_addwithid(ctrl, dlg, "ALT + Shift + F9", PK_F9);
+		dlg_listbox_addwithid(ctrl, dlg, "ALT + Shift + F10", PK_F10);
+		dlg_listbox_addwithid(ctrl, dlg, "ALT + Shift + F11", PK_F11);
+		dlg_listbox_addwithid(ctrl, dlg, "ALT + Shift + F12", PK_F12);
+		switch (oldconf) {
+		case AUTO:      dlg_listbox_select(ctrl, dlg, 0); break;
+		case PK_F1: dlg_listbox_select(ctrl, dlg, 1); break;
+		case PK_F2: dlg_listbox_select(ctrl, dlg, 2); break;
+		case PK_F3: dlg_listbox_select(ctrl, dlg, 3); break;
+		case PK_F4: dlg_listbox_select(ctrl, dlg, 4); break;
+		case PK_F5: dlg_listbox_select(ctrl, dlg, 5); break;
+		case PK_F6: dlg_listbox_select(ctrl, dlg, 6); break;
+		case PK_F7: dlg_listbox_select(ctrl, dlg, 7); break;
+		case PK_F8: dlg_listbox_select(ctrl, dlg, 8); break;
+		case PK_F9: dlg_listbox_select(ctrl, dlg, 9); break;
+		case PK_F10: dlg_listbox_select(ctrl, dlg, 10); break;
+		case PK_F11: dlg_listbox_select(ctrl, dlg, 11); break;
+		case PK_F12: dlg_listbox_select(ctrl, dlg, 12); break;
+		}
+		dlg_update_done(ctrl, dlg);
+	}
+	else if (event == EVENT_SELCHANGE) {
+		int i = dlg_listbox_index(ctrl, dlg);
+		if (i < 0)
+			i = AUTO;
+		else
+			i = dlg_listbox_getid(ctrl, dlg, i);
+		conf_set_int(conf, ctrl->listbox.context.i, i);
+	}
+}
+
+
+
 struct portfwd_data {
     union control *addbutton, *rembutton, *listbox;
     union control *sourcebox, *destbox, *direction;
@@ -1479,6 +1636,7 @@ void setup_config_box(struct controlbox *b, bool midsession,
     struct colour_data *cd;
     struct ttymodes_data *td;
     struct environ_data *ed;
+    struct keymap_data *km;
     struct portfwd_data *pfd;
     struct manual_hostkey_data *mh;
     union control *c;
@@ -1762,6 +1920,50 @@ void setup_config_box(struct controlbox *b, bool midsession,
                       numeric_keypad_handler, P(NULL),
                       "Normal", I(0), "Application", I(1), "NetHack", I(2),
                       NULL);
+
+/*
+     * The Terminal/Key map panel.
+     */
+    ctrl_settitle(b, "Terminal/Key map",
+                  "Options controlling the effects of keys");
+
+    s = ctrl_getset(b, "Terminal/Key map", "kmap",
+                            "Keyboard mappings");
+
+	ctrl_columns(s, 2, 80, 20);
+	km = (struct keymap_data *)
+        ctrl_alloc(b, sizeof(struct keymap_data));
+	km->varlistbox = ctrl_droplist(s, "Shortcut key", '1', 70,
+		HELPCTX(no_help),
+		keymap_handler, P(km));
+	/*
+    km->varbox = ctrl_editbox(s, "Variable", 'v', 60,
+                              HELPCTX(no_help),
+                              keymap_handler, P(km), P(NULL));
+    km->varbox->generic.column = 0;
+	*/
+    km->valbox = ctrl_editbox(s, "Value", 'l', 60,
+                              HELPCTX(no_help),
+                              keymap_handler, P(km), P(NULL));
+    km->valbox->generic.column = 0;
+    km->addbutton = ctrl_pushbutton(s, "Add", 'd',
+                                    HELPCTX(no_help),
+                                    keymap_handler, P(km));
+    km->addbutton->generic.column = 1;
+    km->rembutton = ctrl_pushbutton(s, "Remove", 'r',
+                                    HELPCTX(no_help),
+                                    keymap_handler, P(km));
+    km->rembutton->generic.column = 1;
+    ctrl_columns(s, 1, 100);
+    km->listbox = ctrl_listbox(s, NULL, NO_SHORTCUT,
+                               HELPCTX(no_help),
+                               keymap_handler, P(km));
+    km->listbox->listbox.height = 3;
+    km->listbox->listbox.ncols = 2;
+    km->listbox->listbox.percentages = snewn(2, int);
+    km->listbox->listbox.percentages[0] = 30;
+    km->listbox->listbox.percentages[1] = 70;
+
 
     /*
      * The Terminal/Bell panel.

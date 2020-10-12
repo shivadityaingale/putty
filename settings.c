@@ -584,6 +584,7 @@ void save_open_settings(settings_w *sesskey, Conf *conf)
     write_setting_s(sesskey, "ProxyTelnetCommand", conf_get_str(conf, CONF_proxy_telnet_command));
     write_setting_i(sesskey, "ProxyLogToTerm", conf_get_int(conf, CONF_proxy_log_to_term));
     wmap(sesskey, "Environment", conf, CONF_environmt, true);
+    wmap(sesskey, "KeyMap", conf, CONF_keymap, true);
     write_setting_s(sesskey, "UserName", conf_get_str(conf, CONF_username));
     write_setting_b(sesskey, "UserNameFromEnvironment", conf_get_bool(conf, CONF_username_from_env));
     write_setting_s(sesskey, "LocalUserName", conf_get_str(conf, CONF_localusername));
@@ -932,6 +933,7 @@ void load_open_settings(settings_r *sesskey, Conf *conf)
          conf, CONF_proxy_telnet_command);
     gppi(sesskey, "ProxyLogToTerm", FORCE_OFF, conf, CONF_proxy_log_to_term);
     gppmap(sesskey, "Environment", conf, CONF_environmt);
+    gppmap(sesskey, "KeyMap", conf, CONF_keymap);
     gpps(sesskey, "UserName", "", conf, CONF_username);
     gppb(sesskey, "UserNameFromEnvironment", false,
          conf, CONF_username_from_env);

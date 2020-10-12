@@ -1299,6 +1299,7 @@ NORETURN void cleanup_exit(int);
     X(STR, NONE, termspeed) \
     X(STR, STR, ttymodes) /* values are "Vvalue" or "A" */ \
     X(STR, STR, environmt) \
+    X(STR, STR, keymap) \
     X(STR, NONE, username) \
     X(BOOL, NONE, username_from_env) \
     X(STR, NONE, localusername) \
@@ -2181,6 +2182,13 @@ void queue_idempotent_callback(struct IdempotentCallback *ic);
 typedef void (*toplevel_callback_notify_fn_t)(void *ctx);
 void request_callback_notifications(toplevel_callback_notify_fn_t notify,
                                     void *ctx);
+
+/* Added for keyboard mapping.*/
+typedef enum  { NO_KEY, KEY_F1, KEY_F2, KEY_F3, KEY_F4, KEY_F5, KEY_F6, 
+    KEY_F7, KEY_F8, KEY_F9, KEY_F10, KEY_F11, KEY_F12 } FUN_KEY_ENUM;
+static const char *FUN_KEY[] = { "NONE", "KEY_F1", "KEY_F2", "KEY_F3", 
+    "KEY_F4", "KEY_F5", "KEY_F6", "KEY_F7", "KEY_F8", "KEY_F9", 
+	"KEY_F10", "KEY_F11", "KEY_F12" };
 
 /*
  * Define no-op macros for the jump list functions, on platforms that
