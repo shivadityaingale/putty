@@ -4559,10 +4559,22 @@ static int TranslateKey(UINT message, WPARAM wParam, LPARAM lParam,
           case VK_F18: fkey_number = 18; goto numbered_function_key;
           case VK_F19: fkey_number = 19; goto numbered_function_key;
           case VK_F20: fkey_number = 20; goto numbered_function_key;
-          numbered_function_key:
-            p += format_function_key((char *)p, term, fkey_number,
-                                     shift_state & 1, shift_state & 2);
-            return p - output;
+		  numbered_function_key:
+			  
+			  if (left_alt && (shift_state & 1)) {
+				  char key[2], *val;
+				  sprintf(key, "%d", fkey_number);
+				  val = conf_get_str_str(conf, CONF_keymap, key);
+				  p += sprintf(p, " %s\n", val);
+				  return p - output;
+			  }
+			  else
+			  {
+				  p += format_function_key((char *)p, term, fkey_number,
+					  shift_state & 1, shift_state & 2);				  
+				  return p - output;
+			  }
+            
 
             SmallKeypadKey sk_key;
           case VK_HOME: sk_key = SKK_HOME; goto small_keypad_key;
