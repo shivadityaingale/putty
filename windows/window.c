@@ -3222,7 +3222,11 @@ static LRESULT CALLBACK WndProc(HWND hwnd, UINT message,
          * we get the translations under _our_ control.
          */
         {
-            unsigned char buf[20];
+			/*
+			* Changed sized of array,  previously it was 20.
+			* Set to 512 so that commands more than 19 letters can be passed.
+			*/
+            unsigned char buf[512];
             int len;
 
             if (wParam == VK_PROCESSKEY || /* IME PROCESS key */
@@ -4560,21 +4564,27 @@ static int TranslateKey(UINT message, WPARAM wParam, LPARAM lParam,
           case VK_F19: fkey_number = 19; goto numbered_function_key;
           case VK_F20: fkey_number = 20; goto numbered_function_key;
 		  numbered_function_key:
-			  
+
 			  if (left_alt && (shift_state & 1)) {
 				  char key[2], *val;
 				  sprintf(key, "%d", fkey_number);
 				  val = conf_get_str_str(conf, CONF_keymap, key);
+				  /* Need to increase size of buf at line 3225.*/
 				  p += sprintf(p, " %s\n", val);
+				  /*
+				  * Works without increasing buf size,
+				  * but frees the val after second use.
+				  */
+				  // term_keyinput(term, -1, strcat(val,"\n"), strlen(val)+1);
 				  return p - output;
 			  }
 			  else
 			  {
 				  p += format_function_key((char *)p, term, fkey_number,
-					  shift_state & 1, shift_state & 2);				  
+					  shift_state & 1, shift_state & 2);
 				  return p - output;
 			  }
-            
+
 
             SmallKeypadKey sk_key;
           case VK_HOME: sk_key = SKK_HOME; goto small_keypad_key;
